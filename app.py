@@ -70,7 +70,10 @@ if query:
 
 
         # Step 7 — Generate AI insight
-        insight = generate_insight(query, summary)
+        if result is not None:
+            insight = generate_insight(query, summary)
+        else:
+            insight = "I couldn't understand the question. Try asking about pipeline by sector or top deals."
 
 
     # Display assistant response
@@ -83,3 +86,4 @@ if query:
         st.write("### AI Insight")
 
         st.write(insight)
+
