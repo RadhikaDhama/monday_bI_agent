@@ -35,7 +35,6 @@ if query:
 
         # Step 1 — Understand query
         action = interpret_query(query)
-        st.write("DEBUG ACTION:", action)
 
         # Step 2 — Fetch monday data
         deals_data = get_board_items(DEALS_BOARD_ID)
@@ -87,5 +86,6 @@ if query:
         st.write("### AI Insight")
 
         st.write(insight)
+
 
 
