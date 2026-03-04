@@ -7,7 +7,10 @@ from analysis import (
     clean_data,
     pipeline_by_sector,
     top_deals,
-    pipeline_value_by_sector
+    pipeline_value_by_sector,
+    expected_pipeline_value,
+    deals_by_stage,
+    top_clients,
 )
 from agent import interpret_query, generate_insight
 
@@ -108,6 +111,7 @@ if query:
         st.write("### AI Insight")
 
         st.write(insight)
+
 
 
 
