@@ -102,6 +102,7 @@ if query:
 I couldn't understand that question.
 
 Try asking things like:
+
 • Show the number of deals by sector  
 • What is the pipeline value by sector?  
 • Show the top deals in the pipeline  
@@ -121,6 +122,7 @@ Try asking things like:
         st.write("### AI Insight")
 
         st.write(insight)
+
 
 
 
