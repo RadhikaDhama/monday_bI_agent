@@ -55,23 +55,38 @@ if query:
 
 
         # Step 6 — Run analysis
-        if "sector_pipeline" in action:
-
+        if action == "pipeline_by_sector":
+        
             result = pipeline_by_sector(combined_df)
             summary = result.to_string()
-
-        elif "top_deals" in action:
-
-            result = top_deals(combined_df)
-            summary = result.to_string()
-
-        elif "pipeline_value" in action:
-
+        
+        elif action == "pipeline_value_by_sector":
+        
             result = pipeline_value_by_sector(combined_df)
             summary = result.to_string()
-
+        
+        elif action == "top_deals":
+        
+            result = top_deals(combined_df)
+            summary = result.to_string()
+        
+        elif action == "expected_pipeline_value":
+        
+            result = expected_pipeline_value(combined_df)
+            summary = str(result)
+        
+        elif action == "deals_by_stage":
+        
+            result = deals_by_stage(combined_df)
+            summary = result.to_string()
+        
+        elif action == "top_clients":
+        
+            result = top_clients(combined_df)
+            summary = result.to_string()
+        
         else:
-
+        
             result = None
             summary = "Agent could not understand the query."
 
@@ -93,6 +108,7 @@ if query:
         st.write("### AI Insight")
 
         st.write(insight)
+
 
 
 
