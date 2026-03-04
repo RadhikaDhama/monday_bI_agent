@@ -6,7 +6,8 @@ from analysis import (
     convert_to_dataframe,
     clean_data,
     pipeline_by_sector,
-    top_deals
+    top_deals,
+    pipeline_value_by_sector
 )
 from agent import interpret_query, generate_insight
 
@@ -63,6 +64,11 @@ if query:
             result = top_deals(combined_df)
             summary = result.to_string()
 
+        elif "pipeline_value" in action:
+
+            result = pipeline_value_by_sector(combined_df)
+            summary = result.to_string()
+
         else:
 
             result = None
@@ -86,6 +92,7 @@ if query:
         st.write("### AI Insight")
 
         st.write(insight)
+
 
 
 
