@@ -12,7 +12,7 @@ def interpret_query(query):
     prompt = f"""
 You are a business intelligence agent for analyzing sales pipeline data.
 
-Classify the user question into EXACTLY one of the following actions:
+Classify the user question into EXACTLY one of these actions:
 
 pipeline_by_sector
 pipeline_value_by_sector
@@ -22,23 +22,10 @@ deals_by_stage
 top_clients
 unknown
 
-Action definitions:
-
-pipeline_by_sector → number of deals grouped by sector
-
-pipeline_value_by_sector → total deal value grouped by sector
-
-top_deals → largest deals in the pipeline
-
-expected_pipeline_value → weighted pipeline value based on deal probability
-
-deals_by_stage → number of deals in each deal stage (pipeline funnel)
-
-top_clients → clients with the highest number of deals
-
-unknown → if the question is unrelated to pipeline or deal analytics
-
-Return ONLY the action name.
+Important rules:
+- If the user directly writes an action name (e.g. "top_clients"), return that action.
+- If the question is unrelated to pipeline or deal analytics, return "unknown".
+- Return ONLY the action name. Do not explain.
 
 User Question:
 {query}
@@ -83,4 +70,5 @@ Do not repeat the raw numbers unless necessary.
 
 
     return insight
+
 
