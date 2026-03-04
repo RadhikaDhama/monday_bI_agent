@@ -1,643 +1,276 @@
 # Decision Log
 
-**Project:** Monday.com Business Intelligence Agent  
-**Objective:** Build an AI-powered agent capable of answering founder-level business intelligence questions using live monday.com board data.
+**Project:** Monday.com Business Intelligence Agent
+**Objective:** Build an AI-powered assistant that can answer business intelligence questions using live Monday.com pipeline data.
 
 ---
 
 # 1. Problem Interpretation
 
-The goal of the project was to build an AI agent capable of answering business questions using operational data stored in monday.com boards. The boards provided contained **Deals** and **Work Orders** data representing pipeline and project execution information.
+The goal of this project was to build an AI assistant that can answer **founder-level business questions** using operational data stored in Monday.com boards.
 
-Founders and executives typically ask **high-level natural language questions**, such as:
+The boards available for this project contain information about **Deals** and **Work Orders**, which together represent the company’s sales pipeline and operational activities.
 
-- "How is our pipeline looking for the energy sector?"
-- "Show top deals."
-- "Which sector has the strongest pipeline?"
+In real-world scenarios, founders and business leaders often ask questions like:
 
-To address this, the system needed to perform the following tasks:
+* "Which sector has the strongest pipeline?"
+* "Show the top deals right now."
+* "How many deals are in each stage?"
+* "What is the expected pipeline value?"
 
-1. Fetch **live data from monday.com boards**
-2. Clean and normalize messy operational data
-3. Interpret natural language queries
-4. Run business intelligence analysis
-5. Present insights in a clear and understandable format
+These questions are typically asked in **natural language**, not in technical terms.
+Therefore, the system needed to be capable of both **understanding human questions** and **performing structured data analysis**.
+
+To solve this, the system performs five key tasks:
+
+1. Fetch live data from Monday.com boards
+2. Clean and organize messy CRM-style data
+3. Understand the user’s question using an LLM
+4. Run the correct business analysis
+5. Present the result in a simple and understandable way
 
 ---
 
 # 2. Architecture Decision
 
-A **hybrid architecture** was chosen combining:
+The system was designed using a **hybrid approach**, combining:
 
-- **Large Language Model reasoning**
-- **Deterministic Python analytics**
+* Large Language Models (LLMs)
+* Deterministic Python analytics
 
-This architecture separates **language understanding** from **numerical computation**.
+This design separates **language understanding** from **numerical analysis**.
 
 ### System Flow
 
-User Question  
-↓  
-LLM Intent Classification  
-↓  
-Fetch monday.com Data via API  
-↓  
-Data Cleaning and Normalization  
-↓  
-Business Intelligence Analysis  
-↓  
-LLM Insight Generation  
-↓  
-Streamlit Interface Output
+User Question
+↓
+LLM understands the intent
+↓
+Fetch Monday.com data
+↓
+Clean and structure the data
+↓
+Run the appropriate analysis
+↓
+Generate business insight using LLM
+↓
+Display results in Streamlit
 
-### Reasoning
+### Why this approach was chosen
 
-The LLM is used only for:
+LLMs are very good at understanding **natural language**, but they are not reliable for **mathematical or numerical calculations**.
 
-- interpreting natural language queries
-- generating business-friendly insights
+Therefore:
 
-All numerical analysis is performed using **Python and Pandas**, which ensures accuracy and avoids hallucinated results from the LLM.
+* The **LLM is used for understanding the question and generating insights**
+* **Python and Pandas handle all data analysis**
+
+This ensures that the results remain **accurate and deterministic**.
 
 ---
 
 # 3. Monday.com Integration
 
-The system integrates with monday.com using the **GraphQL API**.
+The system connects to Monday.com using its **GraphQL API**.
 
-Two boards are queried:
+Two boards are used:
 
-- Deals Board
-- Work Orders Board
+* **Deals Board**
+* **Work Orders Board**
 
-Every user query triggers **live API calls**, ensuring that the agent always works with the most recent operational data.
+Whenever a user asks a question, the system fetches **live data** from these boards.
 
 Example workflow:
 
-User Query → Fetch Deals Board → Fetch Work Orders Board → Combine datasets
+User Query
+→ Fetch Deals Board
+→ Fetch Work Orders Board
+→ Convert data to DataFrames
+→ Combine the datasets
 
-This approach avoids stale data and ensures real-time analysis.
-
----
-
-# 4. Data Resilience Strategy
-
-Operational CRM-style data is often inconsistent. Therefore, a **data cleaning pipeline** was implemented.
-
-### Data quality issues handled
-
-- Missing values
-- Inconsistent sector names
-- Text-based numeric fields
-- Probability fields stored as text
-- Structural differences between boards
-
-### Cleaning steps implemented
-
-- Replace missing values with `"Unknown"`
-- Convert deal values to numeric using `pandas.to_numeric`
-- Normalize sector names
-- Convert closure probability text values into numeric scores
-- Merge data from multiple boards into a unified dataset
-
-This ensures the system remains robust even when working with incomplete or inconsistent records.
+This ensures that the insights are always based on the **latest available data**.
 
 ---
 
-# 5. Query Understanding Approach
+# 4. Data Cleaning Strategy
 
-Founder-level questions can be phrased in many ways, making rule-based parsing unreliable.
+CRM data is rarely clean or perfectly structured.
+To handle this, a **data cleaning pipeline** was implemented.
 
-To address this, the system uses an **LLM (Llama 3 via Groq API)** to classify queries into predefined analytical actions.
+Some common issues addressed include:
 
-Example mapping:
+* Missing values
+* Inconsistent sector names
+* Numeric values stored as text
+* Probability fields stored as strings
+* Structural differences between boards
 
-| User Question | Action |
-|---------------|--------|
-| "show top deals" | `top_deals` |
-| "pipeline by sector" | `sector_pipeline` |
-| "sector distribution of deals" | `sector_pipeline` |
+### Cleaning steps performed
 
-The LLM converts natural language into structured commands that trigger specific Python analytics functions.
+* Replace missing values with `"Unknown"`
+* Convert deal values into numeric format
+* Normalize sector names
+* Convert probability values into numeric percentages
+* Merge multiple datasets into one unified dataset
 
-This allows flexible query phrasing without complex rule engineering.
+This step ensures the analysis remains **stable even when the source data is imperfect**.
 
 ---
 
-# 6. Business Intelligence Layer
+# 5. Query Understanding
 
-Once the intent is detected, Python functions perform structured analysis on the cleaned dataset.
+Users can ask questions in many different ways. Writing manual rules for every possible phrasing would be difficult.
 
-Key analytics implemented include:
+Instead, the system uses an **LLM (Llama 3.1 via Groq)** to classify questions into predefined actions.
 
-### Pipeline by Sector
-Counts the number of deals grouped by industry sector.
+### Supported analytical actions
 
-### Top Deals
-Identifies the highest-value deals currently in the pipeline.
+| Action                     | Description                                       |
+| -------------------------- | ------------------------------------------------- |
+| `pipeline_by_sector`       | Number of deals grouped by sector                 |
+| `pipeline_value_by_sector` | Total deal value grouped by sector                |
+| `top_deals`                | Largest deals currently in the pipeline           |
+| `expected_pipeline_value`  | Weighted pipeline value based on deal probability |
+| `deals_by_stage`           | Distribution of deals across pipeline stages      |
+| `top_clients`              | Clients with the highest number of deals          |
+| `unknown`                  | Query unrelated to pipeline analytics             |
 
-### Pipeline Value by Sector
-Calculates the total deal value aggregated by sector.
+Example:
 
-### Pipeline Funnel
-Shows distribution of deals across pipeline stages.
+| User Question                           | Action                     |
+| --------------------------------------- | -------------------------- |
+| "Show deals by sector"                  | `pipeline_by_sector`       |
+| "What is the pipeline value by sector?" | `pipeline_value_by_sector` |
+| "Show the biggest deals"                | `top_deals`                |
 
-These analytics represent the types of insights typically required by leadership teams.
+The LLM converts the natural language question into one of these actions, which then triggers the appropriate Python analysis.
+
+---
+
+# 6. Business Intelligence Analysis
+
+Once the intent is identified, the system runs the corresponding **analysis function** on the cleaned dataset.
+
+### Implemented analyses
+
+**Pipeline by Sector**
+Counts the number of deals grouped by sector.
+
+**Pipeline Value by Sector**
+Calculates the total deal value for each sector.
+
+**Top Deals**
+Shows the largest deals currently in the pipeline.
+
+**Expected Pipeline Value**
+Calculates the weighted value of deals based on their probability of closing.
+
+**Deals by Stage**
+Shows the distribution of deals across pipeline stages.
+
+**Top Clients**
+Identifies clients with the highest number of deals.
+
+These analyses represent the types of insights that **founders and leadership teams commonly need**.
 
 ---
 
 # 7. Insight Generation
 
-After analytics are computed, the results are summarized and passed to the LLM to generate **natural-language business insights**.
+After the analysis is completed, the results are summarized and sent to the LLM.
+
+The LLM then converts the raw data into **clear business insights**.
 
 Example:
 
-Input:  
-Top deals table
+Input (analysis result):
 
-LLM Output:  
-"The pipeline is currently dominated by infrastructure and energy deals, indicating strong sectoral demand."
+Top Deals Table
 
-This step converts raw numerical analysis into **clear executive-level insights**.
+Output:
+
+> "The pipeline is currently driven by a few large deals, indicating strong potential revenue concentration."
+
+This step makes the results easier for **non-technical stakeholders** to understand.
 
 ---
 
-# 8. User Interface Design
+# 8. User Interface
 
-The interface was built using **Streamlit** due to its ability to quickly build interactive data applications.
+The interface was built using **Streamlit**.
 
-Advantages of Streamlit:
-
-- rapid development
-- interactive UI components
-- easy integration with Python data libraries
-- straightforward deployment
+Streamlit was chosen because it allows rapid development of **interactive data applications using Python**.
 
 Key interface features include:
 
-- conversational query input
-- structured data tables
-- automatic visualizations
-- AI-generated insight summaries
+* Chat-style question input
+* Structured data tables
+* AI-generated insight summaries
+* Simple and intuitive layout
 
 ---
 
-# 9. Deployment Strategy
+# 9. Deployment
 
-The application was deployed using **Streamlit Community Cloud**.
+The project was deployed using **Streamlit Community Cloud**.
 
-Reasons for choosing Streamlit Cloud:
+Reasons for choosing this platform:
 
-- simple deployment process
-- GitHub integration
-- automatic updates on code push
-- secure secrets management
+* Easy integration with GitHub
+* Automatic updates when code is pushed
+* Built-in secrets management
+* No infrastructure setup required
 
-API credentials are stored using:
-# Decision Log
+Sensitive API keys are stored securely using:
 
-**Project:** Monday.com Business Intelligence Agent  
-**Objective:** Build an AI-powered agent capable of answering founder-level business intelligence questions using live monday.com board data.
-
----
-
-# 1. Problem Interpretation
-
-The goal of the project was to build an AI agent capable of answering business questions using operational data stored in monday.com boards. The boards provided contained **Deals** and **Work Orders** data representing pipeline and project execution information.
-
-Founders and executives typically ask **high-level natural language questions**, such as:
-
-- "How is our pipeline looking for the energy sector?"
-- "Show top deals."
-- "Which sector has the strongest pipeline?"
-
-To address this, the system needed to perform the following tasks:
-
-1. Fetch **live data from monday.com boards**
-2. Clean and normalize messy operational data
-3. Interpret natural language queries
-4. Run business intelligence analysis
-5. Present insights in a clear and understandable format
-
----
-
-# 2. Architecture Decision
-
-A **hybrid architecture** was chosen combining:
-
-- **Large Language Model reasoning**
-- **Deterministic Python analytics**
-
-This architecture separates **language understanding** from **numerical computation**.
-
-### System Flow
-
-User Question  
-↓  
-LLM Intent Classification  
-↓  
-Fetch monday.com Data via API  
-↓  
-Data Cleaning and Normalization  
-↓  
-Business Intelligence Analysis  
-↓  
-LLM Insight Generation  
-↓  
-Streamlit Interface Output
-
-### Reasoning
-
-The LLM is used only for:
-
-- interpreting natural language queries
-- generating business-friendly insights
-
-All numerical analysis is performed using **Python and Pandas**, which ensures accuracy and avoids hallucinated results from the LLM.
-
----
-
-# 3. Monday.com Integration
-
-The system integrates with monday.com using the **GraphQL API**.
-
-Two boards are queried:
-
-- Deals Board
-- Work Orders Board
-
-Every user query triggers **live API calls**, ensuring that the agent always works with the most recent operational data.
-
-Example workflow:
-
-User Query → Fetch Deals Board → Fetch Work Orders Board → Combine datasets
-
-This approach avoids stale data and ensures real-time analysis.
-
----
-
-# 4. Data Resilience Strategy
-
-Operational CRM-style data is often inconsistent. Therefore, a **data cleaning pipeline** was implemented.
-
-### Data quality issues handled
-
-- Missing values
-- Inconsistent sector names
-- Text-based numeric fields
-- Probability fields stored as text
-- Structural differences between boards
-
-### Cleaning steps implemented
-
-- Replace missing values with `"Unknown"`
-- Convert deal values to numeric using `pandas.to_numeric`
-- Normalize sector names
-- Convert closure probability text values into numeric scores
-- Merge data from multiple boards into a unified dataset
-
-This ensures the system remains robust even when working with incomplete or inconsistent records.
-
----
-
-# 5. Query Understanding Approach
-
-Founder-level questions can be phrased in many ways, making rule-based parsing unreliable.
-
-To address this, the system uses an **LLM (Llama 3 via Groq API)** to classify queries into predefined analytical actions.
-
-Example mapping:
-
-| User Question | Action |
-|---------------|--------|
-| "show top deals" | `top_deals` |
-| "pipeline by sector" | `sector_pipeline` |
-| "sector distribution of deals" | `sector_pipeline` |
-
-The LLM converts natural language into structured commands that trigger specific Python analytics functions.
-
-This allows flexible query phrasing without complex rule engineering.
-
----
-
-# 6. Business Intelligence Layer
-
-Once the intent is detected, Python functions perform structured analysis on the cleaned dataset.
-
-Key analytics implemented include:
-
-### Pipeline by Sector
-Counts the number of deals grouped by industry sector.
-
-### Top Deals
-Identifies the highest-value deals currently in the pipeline.
-
-### Pipeline Value by Sector
-Calculates the total deal value aggregated by sector.
-
-### Pipeline Funnel
-Shows distribution of deals across pipeline stages.
-
-These analytics represent the types of insights typically required by leadership teams.
-
----
-
-# 7. Insight Generation
-
-After analytics are computed, the results are summarized and passed to the LLM to generate **natural-language business insights**.
-
-Example:
-
-Input:  
-Top deals table
-
-LLM Output:  
-"The pipeline is currently dominated by infrastructure and energy deals, indicating strong sectoral demand."
-
-This step converts raw numerical analysis into **clear executive-level insights**.
-
----
-
-# 8. User Interface Design
-
-The interface was built using **Streamlit** due to its ability to quickly build interactive data applications.
-
-Advantages of Streamlit:
-
-- rapid development
-- interactive UI components
-- easy integration with Python data libraries
-- straightforward deployment
-
-Key interface features include:
-
-- conversational query input
-- structured data tables
-- automatic visualizations
-- AI-generated insight summaries
-
----
-
-# 9. Deployment Strategy
-
-The application was deployed using **Streamlit Community Cloud**.
-
-Reasons for choosing Streamlit Cloud:
-
-- simple deployment process
-- GitHub integration
-- automatic updates on code push
-- secure secrets management
-
-API credentials are stored using:
-# Decision Log
-
-**Project:** Monday.com Business Intelligence Agent  
-**Objective:** Build an AI-powered agent capable of answering founder-level business intelligence questions using live monday.com board data.
-
----
-
-# 1. Problem Interpretation
-
-The goal of the project was to build an AI agent capable of answering business questions using operational data stored in monday.com boards. The boards provided contained **Deals** and **Work Orders** data representing pipeline and project execution information.
-
-Founders and executives typically ask **high-level natural language questions**, such as:
-
-- "How is our pipeline looking for the energy sector?"
-- "Show top deals."
-- "Which sector has the strongest pipeline?"
-
-To address this, the system needed to perform the following tasks:
-
-1. Fetch **live data from monday.com boards**
-2. Clean and normalize messy operational data
-3. Interpret natural language queries
-4. Run business intelligence analysis
-5. Present insights in a clear and understandable format
-
----
-
-# 2. Architecture Decision
-
-A **hybrid architecture** was chosen combining:
-
-- **Large Language Model reasoning**
-- **Deterministic Python analytics**
-
-This architecture separates **language understanding** from **numerical computation**.
-
-### System Flow
-
-User Question  
-↓  
-LLM Intent Classification  
-↓  
-Fetch monday.com Data via API  
-↓  
-Data Cleaning and Normalization  
-↓  
-Business Intelligence Analysis  
-↓  
-LLM Insight Generation  
-↓  
-Streamlit Interface Output
-
-### Reasoning
-
-The LLM is used only for:
-
-- interpreting natural language queries
-- generating business-friendly insights
-
-All numerical analysis is performed using **Python and Pandas**, which ensures accuracy and avoids hallucinated results from the LLM.
-
----
-
-# 3. Monday.com Integration
-
-The system integrates with monday.com using the **GraphQL API**.
-
-Two boards are queried:
-
-- Deals Board
-- Work Orders Board
-
-Every user query triggers **live API calls**, ensuring that the agent always works with the most recent operational data.
-
-Example workflow:
-
-User Query → Fetch Deals Board → Fetch Work Orders Board → Combine datasets
-
-This approach avoids stale data and ensures real-time analysis.
-
----
-
-# 4. Data Resilience Strategy
-
-Operational CRM-style data is often inconsistent. Therefore, a **data cleaning pipeline** was implemented.
-
-### Data quality issues handled
-
-- Missing values
-- Inconsistent sector names
-- Text-based numeric fields
-- Probability fields stored as text
-- Structural differences between boards
-
-### Cleaning steps implemented
-
-- Replace missing values with `"Unknown"`
-- Convert deal values to numeric using `pandas.to_numeric`
-- Normalize sector names
-- Convert closure probability text values into numeric scores
-- Merge data from multiple boards into a unified dataset
-
-This ensures the system remains robust even when working with incomplete or inconsistent records.
-
----
-
-# 5. Query Understanding Approach
-
-Founder-level questions can be phrased in many ways, making rule-based parsing unreliable.
-
-To address this, the system uses an **LLM (Llama 3 via Groq API)** to classify queries into predefined analytical actions.
-
-Example mapping:
-
-| User Question | Action |
-|---------------|--------|
-| "show top deals" | `top_deals` |
-| "pipeline by sector" | `sector_pipeline` |
-| "sector distribution of deals" | `sector_pipeline` |
-
-The LLM converts natural language into structured commands that trigger specific Python analytics functions.
-
-This allows flexible query phrasing without complex rule engineering.
-
----
-
-# 6. Business Intelligence Layer
-
-Once the intent is detected, Python functions perform structured analysis on the cleaned dataset.
-
-Key analytics implemented include:
-
-### Pipeline by Sector
-Counts the number of deals grouped by industry sector.
-
-### Top Deals
-Identifies the highest-value deals currently in the pipeline.
-
-### Pipeline Value by Sector
-Calculates the total deal value aggregated by sector.
-
-### Pipeline Funnel
-Shows distribution of deals across pipeline stages.
-
-These analytics represent the types of insights typically required by leadership teams.
-
----
-
-# 7. Insight Generation
-
-After analytics are computed, the results are summarized and passed to the LLM to generate **natural-language business insights**.
-
-Example:
-
-Input:  
-Top deals table
-
-LLM Output:  
-"The pipeline is currently dominated by infrastructure and energy deals, indicating strong sectoral demand."
-
-This step converts raw numerical analysis into **clear executive-level insights**.
-
----
-
-# 8. User Interface Design
-
-The interface was built using **Streamlit** due to its ability to quickly build interactive data applications.
-
-Advantages of Streamlit:
-
-- rapid development
-- interactive UI components
-- easy integration with Python data libraries
-- straightforward deployment
-
-Key interface features include:
-
-- conversational query input
-- structured data tables
-- automatic visualizations
-- AI-generated insight summaries
-
----
-
-# 9. Deployment Strategy
-
-The application was deployed using **Streamlit Community Cloud**.
-
-Reasons for choosing Streamlit Cloud:
-
-- simple deployment process
-- GitHub integration
-- automatic updates on code push
-- secure secrets management
-
-API credentials are stored using:
+```python
 st.secrets["GROQ_API_KEY"]
 st.secrets["MONDAY_API_KEY"]
+```
 
-
-This ensures that sensitive credentials are not exposed in the repository.
+This prevents credentials from being exposed in the repository.
 
 ---
 
-# 10. Tradeoffs and Limitations
+# 10. Limitations
 
-Several tradeoffs were made due to time constraints.
+Due to time and scope constraints, some limitations remain.
 
-### Limited query scope
-The agent currently supports a defined set of analytics actions.
+### Limited question scope
+
+The agent currently supports only a defined set of analytics queries.
 
 ### No conversational memory
-Follow-up questions referencing previous responses are not yet supported.
+
+Users cannot yet ask follow-up questions referencing previous results.
 
 ### Basic visualizations
-Charts are generated using Streamlit's built-in tools rather than advanced BI frameworks.
 
-These decisions were made to ensure stability and correctness within the project timeline.
+The system focuses primarily on tabular outputs rather than complex dashboards.
 
 ---
 
 # 11. Future Improvements
 
-With additional development time, the system could be expanded with:
+With further development, several enhancements could be added:
 
-### Conversational context
-Enable follow-up questions referencing previous responses.
-
-### Predictive analytics
-Add forecasting capabilities for pipeline revenue.
-
-### Advanced visual dashboards
-Implement more interactive visualizations.
-
-### Automated leadership reports
-Generate executive summaries for weekly leadership updates.
+* Support for follow-up conversational queries
+* Predictive pipeline forecasting
+* More advanced data visualizations
+* Automated executive reports
+* Integration with additional data sources
 
 ---
 
 # Conclusion
 
-The final system demonstrates how **AI agents can be combined with live operational data to deliver business intelligence insights**.
+This project demonstrates how **AI agents can combine natural language understanding with real operational data to provide business intelligence insights**.
 
 By combining:
 
-- LLM-based query understanding
-- real-time monday.com data integration
-- deterministic analytics
-- conversational outputs
+* LLM-based query interpretation
+* live Monday.com data integration
+* structured Python analytics
+* conversational outputs
 
-the agent provides a scalable foundation for **AI-powered decision support systems**.
+the system provides a strong foundation for **AI-driven business decision support tools**.
