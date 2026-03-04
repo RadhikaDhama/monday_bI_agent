@@ -98,7 +98,17 @@ if query:
         if result is not None:
             insight = generate_insight(query, summary)
         else:
-            insight = "I couldn't understand the question. Try asking about pipeline by sector or top deals."
+            insight = """
+I couldn't understand that question.
+
+Try asking things like:
+• Show the number of deals by sector  
+• What is the pipeline value by sector?  
+• Show the top deals in the pipeline  
+• What is the expected pipeline value?  
+• How many deals are in each stage?  
+• Which clients have the most deals?
+"""
 
 
     # Display assistant response
@@ -111,6 +121,7 @@ if query:
         st.write("### AI Insight")
 
         st.write(insight)
+
 
 
 
