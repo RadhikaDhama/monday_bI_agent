@@ -65,6 +65,7 @@ if query:
 
         else:
 
+            result = None
             summary = "Agent could not understand the query."
 
 
@@ -80,4 +81,5 @@ if query:
             st.dataframe(result)
 
         st.write("### AI Insight")
+
         st.write(insight)
