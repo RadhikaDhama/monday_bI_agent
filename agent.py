@@ -18,6 +18,9 @@ sector_pipeline
 top_deals
 pipeline_value
 pipeline_funnel
+unknown
+
+If the question is unrelated to pipeline data, return "unknown".
 
 Return ONLY the action name.
 
@@ -61,5 +64,6 @@ Do not repeat the raw numbers unless necessary.
     )
 
     insight = response.choices[0].message.content.strip()
+
 
     return insight
